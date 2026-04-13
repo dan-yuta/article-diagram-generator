@@ -416,32 +416,32 @@ def sanitize_generated_html(html):
     # <script>タグを除去（テンプレート側で読み込み済み）
     html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
 
-    # 濃い背景クラスを薄い背景に置換
-    dark_bg_replacements = [
-        (r'bg-slate-900', 'bg-slate-100'),
-        (r'bg-slate-800', 'bg-slate-100'),
-        (r'bg-gradient-to-br\s+from-slate-900\s+via-slate-800\s+to-slate-900', 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50'),
-        (r'bg-gradient-to-br\s+from-slate-800\s+to-slate-900', 'bg-gradient-to-br from-slate-50 to-blue-50'),
-        (r'bg-red-600\b', 'bg-red-500/10'),
-    ]
-    for pattern, replacement in dark_bg_replacements:
-        html = re.sub(pattern, replacement, html)
+    # 濃い背景色(600-950)を薄い色(50-100)に汎用置換
+    # bg-{color}-{600〜950} → bg-{color}-50（小さなバッジのbg-{color}-500は許容）
+    html = re.sub(r'\bbg-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'bg-\1-50', html)
+
+    # グラデーションの from-/via-/to- の濃い色も薄くする
+    html = re.sub(r'\bfrom-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'from-\1-50', html)
+    html = re.sub(r'\bvia-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'via-\1-100', html)
+    html = re.sub(r'\bto-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'to-\1-50', html)
 
     # text-white を text-slate-900 に置換
     html = re.sub(r'\btext-white\b', 'text-slate-900', html)
 
-    # text-slate-50 を text-slate-900 に置換（ほぼ白色）
-    html = re.sub(r'\btext-slate-50\b', 'text-slate-900', html)
-    html = re.sub(r'\btext-slate-100\b', 'text-slate-800', html)
-    html = re.sub(r'\btext-slate-200\b', 'text-slate-700', html)
-    html = re.sub(r'\btext-slate-300\b', 'text-slate-600', html)
+    # 薄すぎるテキスト色を濃くする（白背景で読めるように）
+    html = re.sub(r'\btext-(\w+)-50\b', r'text-\1-900', html)
+    html = re.sub(r'\btext-(\w+)-100\b', r'text-\1-800', html)
+    html = re.sub(r'\btext-(\w+)-200\b', r'text-\1-700', html)
+    html = re.sub(r'\btext-(\w+)-300\b', r'text-\1-600', html)
 
-    # bg-white/10, bg-white/5 などの半透明白背景をしっかり見える色に
-    html = re.sub(r'\bbg-white/10\b', 'bg-ads-surface', html)
-    html = re.sub(r'\bbg-white/5\b', 'bg-ads-surface', html)
+    # bg-white/N の半透明白背景を見える色に
+    html = re.sub(r'\bbg-white/\d+\b', 'bg-ads-surface', html)
 
-    # backdrop-blur は薄い背景では不要なので除去（-sm, -md等の派生も含む）
+    # backdrop-blur は薄い背景では不要なので除去（派生含む）
     html = re.sub(r'\bbackdrop-blur(?:-[a-z]+)?\b', '', html)
+
+    # shadow-2xl などの強いシャドウを穏やかに
+    html = re.sub(r'\bshadow-2xl\b', 'shadow-lg', html)
 
     return html
 
