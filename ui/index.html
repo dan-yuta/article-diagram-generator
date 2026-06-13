@@ -200,7 +200,7 @@
         });
 
         stopBtn.addEventListener('click', async () => {
-            if (confirm('サーバーを停止しますか？\n停止後は run.bat を再度実行して起動してください。')) {
+            if (confirm('サーバーを停止しますか？\n停止後は python app.py を再度実行して起動してください。')) {
                 try {
                     const response = await fetch('/shutdown', { method: 'POST' });
                     if (response.ok) {

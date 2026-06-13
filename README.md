@@ -16,15 +16,12 @@
 python app.py
 ```
 
-または `run.bat` をダブルクリック。
-
 初回起動時にAPIキーを入力すれば、次回からは自動読み込み。
 
 ## ファイル構成
 
 ```
 ├── app.py              # メインアプリケーション
-├── run.bat             # 簡単起動バッチ
 ├── README.md
 ├── references/
 │   └── base.html       # 図解HTMLテンプレート（Tailwind CSS + Lucide Icons + ADS配色）
