@@ -18,11 +18,15 @@ python app.py
 
 初回起動時にAPIキーを入力すれば、次回からは自動読み込み。
 
+詳しい仕様・使い方・処理フロー（図解付き）は [doc/仕様書.md](doc/仕様書.md) を参照してください。
+
 ## ファイル構成
 
 ```
 ├── app.py              # メインアプリケーション
 ├── README.md
+├── doc/
+│   └── 仕様書.md        # 仕様・使い方の詳細ドキュメント（図入り）
 ├── references/
 │   └── base.html       # 図解HTMLテンプレート（Tailwind CSS + Lucide Icons + ADS配色）
 ├── ui/
