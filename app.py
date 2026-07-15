@@ -421,9 +421,17 @@ def sanitize_generated_html(html):
     html = re.sub(r'\bbg-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'bg-\1-50', html)
 
     # グラデーションの from-/via-/to- の濃い色も薄くする
-    html = re.sub(r'\bfrom-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'from-\1-50', html)
-    html = re.sub(r'\bvia-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'via-\1-100', html)
-    html = re.sub(r'\bto-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'to-\1-50', html)
+    # bg-clip-text のグラデーションは背景ではなく文字色なので薄くしない（白文字化を防ぐ）
+    def lighten_gradient(match):
+        classes = match.group(1)
+        if 'bg-clip-text' in classes and 'text-transparent' in classes:
+            return match.group(0)
+        classes = re.sub(r'\bfrom-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'from-\1-50', classes)
+        classes = re.sub(r'\bvia-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'via-\1-100', classes)
+        classes = re.sub(r'\bto-(\w+)-(6\d\d|7\d\d|8\d\d|9[0-5]\d)\b', r'to-\1-50', classes)
+        return f'class="{classes}"'
+
+    html = re.sub(r'class="([^"]*)"', lighten_gradient, html)
 
     # text-white を text-slate-900 に置換
     html = re.sub(r'\btext-white\b', 'text-slate-900', html)
