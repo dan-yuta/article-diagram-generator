@@ -26,7 +26,7 @@ python app.py
 ├── app.py              # メインアプリケーション
 ├── README.md
 ├── doc/
-│   └── 仕様書.md        # 仕様・使い方の詳細ドキュメント（図入り）
+│   └── 仕様書.md        # 仕様・使い方の詳細ドキュメント（図解付き）
 ├── references/
 │   └── base.html       # 図解HTMLテンプレート（Tailwind CSS + Lucide Icons + ADS配色）
 ├── ui/
