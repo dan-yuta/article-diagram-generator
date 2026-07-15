@@ -78,10 +78,11 @@ class DiagramHandler(SimpleHTTPRequestHandler):
             from urllib.parse import unquote
             encoded_name = self.path.replace('/open_file/', '')
             file_name = unquote(encoded_name)
-            file_path = (OUTPUT_DIR / file_name).resolve()
+            output_root = OUTPUT_DIR.resolve()
+            file_path = (output_root / file_name).resolve()
 
-            # パストラバーサル防止
-            if not str(file_path).startswith(str(OUTPUT_DIR.resolve())):
+            # パストラバーサル防止（startswith だとディレクトリ境界を見ないため is_relative_to を使う）
+            if not file_path.is_relative_to(output_root):
                 self.send_response(403)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.end_headers()
@@ -145,14 +146,15 @@ class DiagramHandler(SimpleHTTPRequestHandler):
         elif self.path == '/generate':
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data.decode('utf-8'))
+                if not isinstance(data, dict):
+                    raise ValueError('JSON object expected')
+                url = data.get('url', '')
+                text = data.get('text', '')
             except (ValueError, TypeError):
                 self.send_error_response('不正なリクエストです')
                 return
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
-
-            url = data.get('url', '')
-            text = data.get('text', '')
 
             try:
                 # URLが指定されている場合は記事を取得
@@ -219,8 +221,8 @@ class DiagramHandler(SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps({'error': error_message}, ensure_ascii=False).encode('utf-8'))
 
     def log_message(self, format, *args):
-        """ログを簡潔に出力"""
-        return  # ログを無効化
+        """アクセスログを無効化（進捗は各処理の print で出力するため）"""
+        return
 
 
 def fetch_article(url):
@@ -397,9 +399,11 @@ bg-ads-surface(薄グレー), text-ads-text(#1E293B), text-ads-muted(#64748B), t
         raise Exception('テンプレートにCONTENT_START/CONTENT_ENDマーカーが見つかりません。references/base.htmlを確認してください')
 
     full_html = template.replace('<!-- TITLE -->', title_text)
+    # 置換文字列だと \1 や \d がエスケープとして解釈されるため関数で渡す
+    replacement = f'<!-- CONTENT_START -->\n{content_html}\n<!-- CONTENT_END -->'
     full_html = re.sub(
         r'<!-- CONTENT_START -->.*?<!-- CONTENT_END -->',
-        f'<!-- CONTENT_START -->\n{content_html}\n<!-- CONTENT_END -->',
+        lambda _m: replacement,
         full_html,
         flags=re.DOTALL
     )
@@ -493,9 +497,12 @@ def generate_filename(text):
     lines = text.split('\n')
     title = lines[0] if lines else text[:100]
 
+    # 制御文字(タブ等)はWindowsのファイル名に使えない。語区切りなので空白に置換する
+    title = re.sub(r'[\x00-\x1f\x7f]', ' ', title)
     # ファイル名に使えない文字を削除
     title = re.sub(r'[\\/:*?"<>|]', '', title)
-    title = title.strip()[:50]
+    # 連続空白をまとめ、Windowsが嫌う末尾のドット/空白を除去
+    title = re.sub(r'\s+', ' ', title).strip()[:50].rstrip(' .')
 
     # タイムスタンプを追加
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
